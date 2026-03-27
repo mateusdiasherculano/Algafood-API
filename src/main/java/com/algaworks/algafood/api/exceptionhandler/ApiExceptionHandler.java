@@ -41,10 +41,12 @@ public class ApiExceptionHandler  extends ResponseEntityExceptionHandler {
     public ResponseEntity<?> handleEntidadeNaoEncontradoException(EntidadeNaoEncontradaException ex, WebRequest request) {
 
         HttpStatus status = HttpStatus.NOT_FOUND;
+        ProblemType problemType = ProblemType.ENTIDADE_NAO_ENCONTRADA;
+        String detailMessage = ex.getMessage();
 
-        Problem problem =  Problem.builder().status(status.value())
-                           .type(ProblemType.ENTIDADE_NAO_ENCONTRADA.getUri())
-                           .title(ProblemType.ENTIDADE_NAO_ENCONTRADA.getTitle()).detail(ex.getMessage()).build();
+        createProblemBuilder(status,problemType,detailMessage);
+
+        Problem problem =  createProblemBuilder(status, problemType, detailMessage).build();
 
         return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
@@ -52,14 +54,33 @@ public class ApiExceptionHandler  extends ResponseEntityExceptionHandler {
     @ExceptionHandler(NegocioException.class)
     public ResponseEntity<?> handleNegocioException(NegocioException ex, WebRequest request) {
 
-        return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.NOT_FOUND, request);
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        ProblemType problemType = ProblemType.ERRO_NEGOCIO;
+        String detailMessage = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detailMessage).build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
 
     @ExceptionHandler(EntidadeEmUsoException.class)
     public ResponseEntity<?> handleEntidadeEmUsoException(EntidadeEmUsoException ex, WebRequest request) {
 
-        return handleExceptionInternal(ex, ex.getMessage(), new HttpHeaders(), HttpStatus.CONFLICT, request);
+        HttpStatus status = HttpStatus.CONFLICT;
+        ProblemType problemType = ProblemType.ENTIDADE_EM_USO;
+        String detailMessage = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detailMessage).build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
 
-    private void createProblemBuilder(HttpStatus status, String title, String detail) {}
+    private Problem.ProblemBuilder createProblemBuilder(HttpStatus status, ProblemType problemType, String detail) {
+
+        return Problem.builder()
+                .status(status.value())
+                .type(problemType.getUri())
+                .title(problemType.getTitle())
+                .detail(detail);
+    }
 }
